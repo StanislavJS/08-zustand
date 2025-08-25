@@ -33,8 +33,8 @@ export async function generateMetadata({ params }: NotesFilterPageProps): Promis
       images: [
         {
           url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
-          width: 1280,
-          height: 720,
+          width: 1200,
+          height: 630,
           alt: 'NoteHub Filter Notes OG Image',
         },
       ],
