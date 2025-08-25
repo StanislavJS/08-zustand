@@ -2,19 +2,21 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteNote } from "@/lib/api";
 import type { Note } from "@/types/note";
 import css from "./NoteList.module.css";
+import Link from "next/link";
 
 interface NoteListProps {
-  notes?: Note[]; // notes опційний
-  onSelectNote: (note: Note) => void; // функція для перегляду деталей
+  notes?: Note[];
+  onSelectNote: (note: Note) => void;
 }
 
-export default function NoteList({ notes = [], onSelectNote }: NoteListProps) {
+export default function NoteList({ notes = [] }: NoteListProps) {
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteNote(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      // обновляем все списки notes
+      queryClient.invalidateQueries({ queryKey: ["notes"], exact: false });
     },
   });
 
@@ -30,23 +32,29 @@ export default function NoteList({ notes = [], onSelectNote }: NoteListProps) {
           <p className={css.content}>{note.content}</p>
           <div className={css.footer}>
             <span className={css.tag}>{note.tag}</span>
-            <button
-              type="button"
-              className={css.link}
-              onClick={() => onSelectNote(note)}
-            >
+
+            <Link href={`/notes/${note.id}`} scroll={false} className={css.link}>
               View details
-            </button>
+            </Link>
+
             <button
               type="button"
               className={css.button}
-              onClick={() => deleteMutation.mutate(note.id)}
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (confirm(`Delete note "${note.title}"?`)) {
+                  deleteMutation.mutate(note.id);
+                }
+              }}
             >
-              Delete
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
             </button>
           </div>
         </li>
       ))}
+      {deleteMutation.isError && (
+        <p className={css.error}>Error deleting note. Try again.</p>
+      )}
     </ul>
   );
 }

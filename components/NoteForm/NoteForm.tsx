@@ -1,136 +1,104 @@
-import css from './NoteForm.module.css'
-import { ErrorMessage, Field, Formik, Form, type FormikHelpers } from 'formik';
-import * as Yup from 'yup';
-import { useCallback } from 'react';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNoteStore } from '@/lib/store/noteStore';
 import { createNote } from '@/lib/api';
-import toast from 'react-hot-toast';
-
-
-interface NoteFormValues {
-  title: string;
-  content: string;
-  tag: 'Todo' | 'Work' | 'Personal' | 'Meeting' | 'Shopping';
-}
-
-const initialValues: NoteFormValues = {
-  title: '',
-  content: '',
-  tag: 'Todo',
-}
+import css from './NoteForm.module.css';
+import type { NoteTag } from '@/types/note';
 
 interface NoteFormProps {
-  onClose: () => void;
-  onSuccess?: () => void;
+  onClose?: () => void;
 }
 
-export default function NoteForm({onClose}: NoteFormProps) {
+export default function NoteForm({ onClose }: NoteFormProps) {
+  const { draft, setDraft, clearDraft } = useNoteStore();
+  const [title, setTitle] = useState(draft.title);
+  const [content, setContent] = useState(draft.content);
+  const [tag, setTag] = useState<NoteTag>(draft.tag);
   const queryClient = useQueryClient();
+
+  // Автооновлення draft
+  useEffect(() => {
+    setDraft({ title, content, tag });
+  }, [title, content, tag, setDraft]);
 
   const mutation = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
+      clearDraft();
+      setTitle('');
+      setContent('');
+      setTag('Todo');
+      if (onClose) onClose();
+    },
+    onError: (error: Error) => {
+      console.error('Failed to create note:', error.message);
     },
   });
 
-  const handleSubmit = useCallback(
-    (values: NoteFormValues, action: FormikHelpers<NoteFormValues>) => {
-      mutation.mutate(values, {
-        onSuccess: () => {
-          action.resetForm();
-          toast.success('📝 Note created successfully');
-          onClose();
-        },
-      });
-    },
-    [mutation, onClose]
-  );
-
-  const Schema = Yup.object().shape({
-    title: Yup.string()
-     .min(3, 'Title must be at least 3 characters')
-     .max(50, 'Title is too long')
-     .required('Title is required'),
-    content: Yup.string()
-     .max(500, 'Content is too long'),
-    tag: Yup.string()
-     .oneOf(['Todo', 'Work', 'Personal', 'Meeting', 'Shopping'], 'Invalid category')
-     .required('Tag is required'),
-  });
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    mutation.mutate({ title, content, tag });
+  };
 
   return (
-    <Formik 
-      initialValues={initialValues}
-      validationSchema={Schema}
-      onSubmit={handleSubmit}>
-      <Form className={css.form}>
-       <div className={css.formGroup}>
-        <label htmlFor='note-title'>Title</label>
-          <Field
-            id='note-title'
-            type='text'
-            name='title'
-            className={css.input}
-          />
-          <ErrorMessage
-            name='title'
-            component='span'
-            className={css.error}
-          />
-       </div>
+    <form className={css.form} onSubmit={handleSubmit}>
+      <label className={css.label}>
+        Title
+        <input
+          className={css.input}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+        />
+      </label>
 
-       <div className={css.formGroup}>
-         <label htmlFor='note-content'>Content</label>
-          <Field
-           as='textarea'
-           id='note-content'
-           name='content'
-           rows={8}
-           className={css.textarea}
-          />
-          <ErrorMessage
-            name='content'
-            component='span'
-            className={css.error}
-          />
-       </div>
+      <label className={css.label}>
+        Content
+        <textarea
+          className={css.textarea}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          required
+        />
+      </label>
 
-       <div className={css.formGroup}>
-        <label htmlFor='note-tag'>Tag</label>
-          <Field
-            as='select'
-            id='note-tag'
-            name='tag'
-            className={css.select}>
-            <option value='Todo'>Todo</option>
-            <option value='Work'>Work</option>
-            <option value='Personal'>Personal</option>
-            <option value='Meeting'>Meeting</option>
-            <option value='Shopping'>Shopping</option>
-          </Field>
-          <ErrorMessage
-            name='tag'
-            component='span'
-            className={css.error}
-          />
-       </div>
+      <label className={css.label}>
+        Tag
+        <select
+          className={css.select}
+          value={tag}
+          onChange={(e) => setTag(e.target.value as NoteTag)}
+        >
+          <option value="Todo">Todo</option>
+          <option value="Work">Work</option>
+          <option value="Personal">Personal</option>
+          <option value="Meeting">Meeting</option>
+          <option value="Shopping">Shopping</option>
+        </select>
+      </label>
 
-       <div className={css.actions}>
-        <button 
-         type='button' 
-         className={css.cancelButton}
-         onClick={onClose}>
-          Cancel
-       </button>
+      <div className={css.buttons}>
         <button
-         type='submit'
-         className={css.submitButton}
-         disabled={mutation.isPending}>
-          Create note
-       </button>
-       </div>
-     </Form>
-   </Formik>
-  )
+          type="submit"
+          className={css.submitButton}
+          disabled={mutation.isPending}
+        >
+          {mutation.isPending ? 'Saving...' : 'Save'}
+        </button>
+
+        {onClose && (
+          <button
+            type="button"
+            className={css.cancelButton}
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+        )}
+      </div>
+    </form>
+  );
 }
