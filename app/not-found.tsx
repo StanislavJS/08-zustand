@@ -4,29 +4,13 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import css from './Home.module.css';
 
-
-export const metadata = {
-  title: '404 - Page not found',
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
-
-
-export default function NotFound() {
+export default function NotFoundPage() {
   const router = useRouter();
   const [countdown, setCountdown] = useState(3);
 
-
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCountdown((prev) => prev - 1);
-    }, 1000);
-
-
+    const interval = setInterval(() => setCountdown(prev => prev - 1), 1000);
     const timer = setTimeout(() => router.push('/'), 3000);
-
 
     return () => {
       clearInterval(interval);
@@ -34,9 +18,8 @@ export default function NotFound() {
     };
   }, [router]);
 
-  
   return (
-    <div>
+    <div className={css.container}>
       <h1 className={css.title}>404 - Page not found</h1>
       <p className={css.description}>
         Sorry, the page you are looking for does not exist.
