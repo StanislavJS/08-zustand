@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useDebounce } from 'use-debounce';
-import type { NotesResponse, NoteTag } from '@/types/note';
+import type { NotesResponse, NoteTag, Note } from '@/types/note';
 import { fetchNotes } from '@/lib/api';
 import NoteList from '@/components/NoteList/NoteList';
 import SearchBox from '@/components/SearchBox/SearchBox';
@@ -11,12 +11,12 @@ import Pagination from '@/components/Pagination/Pagination';
 import Link from 'next/link';
 import css from '@/components/NotePage/NotePage.module.css';
 
-type NotesClientProps = {
+interface NotesClientProps {
   initialPage: number;
   initialSearch: string;
   initialTag: 'All' | NoteTag;
   initialData?: NotesResponse;
-};
+}
 
 export default function NotesClient({
   initialPage,
@@ -30,13 +30,13 @@ export default function NotesClient({
   const [debouncedSearchTerm] = useDebounce(searchTerm, 1000);
   const perPage = 12;
 
+ 
   useEffect(() => {
-    setCurrentTag(initialTag);
     setCurrentPage(1);
-    setSearchTerm('');
+    setCurrentTag(initialTag);
   }, [initialTag]);
 
-  const query = useQuery({
+  const query = useQuery<NotesResponse, Error>({
     queryKey: ['notes', debouncedSearchTerm, currentPage, currentTag],
     queryFn: () =>
       fetchNotes(
@@ -45,18 +45,24 @@ export default function NotesClient({
         perPage,
         currentTag === 'All' ? undefined : currentTag
       ),
-    initialData: initialData ?? undefined,
+    initialData,
   });
 
-  const data = query.data as NotesResponse | undefined;
+  const data = query.data;
 
   const handleSearchChange = (newTerm: string) => {
     setSearchTerm(newTerm);
-    setCurrentPage(1);
+    setCurrentPage(1); 
   };
 
   const notesExist = !!data?.notes?.length;
   const totalPages = data?.totalPages ?? 1;
+
+ 
+  const handleSelectNote = (note: Note) => {
+   
+    console.log('Open note:', note.id);
+  };
 
   return (
     <div className={css.app}>
@@ -75,10 +81,10 @@ export default function NotesClient({
       </header>
 
       {query.isLoading && <p>Loading notes...</p>}
-      {query.isError && <p>Error loading notes.</p>}
+      {query.isError && <p>Error loading notes: {query.error.message}</p>}
 
       {notesExist ? (
-        <NoteList notes={data!.notes} onSelectNote={() => {}} />
+        <NoteList notes={data!.notes} onSelectNote={handleSelectNote} />
       ) : (
         !query.isLoading && <p className={css.emptyMessage}>No notes found.</p>
       )}

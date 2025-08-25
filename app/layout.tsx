@@ -23,14 +23,23 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 export const metadata: Metadata = {
   title: 'NoteHub',
-  description: 'Your personal notes management app',
+  description: 'NoteHub — create, manage, and organize your personal and work notes with ease.',
   openGraph: {
     title: 'NoteHub',
-    description: 'Your personal notes management app',
-    url: 'https://your-vercel-url.vercel.app',
-    images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
+    description: 'NoteHub — create, manage, and organize your personal and work notes with ease.',
+    url: SITE_URL,
+    images: [
+      {
+        url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'NoteHub App Preview',
+      },
+    ],
   },
 };
 

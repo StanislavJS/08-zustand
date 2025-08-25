@@ -1,25 +1,52 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import css from './Home.module.css';
 
-const NotFound = () => {
+
+export const metadata = {
+  title: '404 - Page not found',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+
+export default function NotFound() {
   const router = useRouter();
+  const [countdown, setCountdown] = useState(3);
+
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+
     const timer = setTimeout(() => router.push('/'), 3000);
-    return () => clearTimeout(timer);
+
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timer);
+    };
   }, [router]);
 
+  
   return (
     <div>
       <h1 className={css.title}>404 - Page not found</h1>
       <p className={css.description}>
         Sorry, the page you are looking for does not exist.
       </p>
+      <p className={css.description}>
+        Redirecting to homepage in {countdown}...
+      </p>
+      <button onClick={() => router.push('/')} className={css.button}>
+        Go Home
+      </button>
     </div>
   );
-};
-
-export default NotFound;
+}
