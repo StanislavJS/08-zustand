@@ -1,15 +1,18 @@
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { fetchNoteById } from '@/lib/api';
 import NotePreview from '../../@modal/(.)notes/[id]/NotePreview.client';
+// import type { Metadata } from 'next';
 import type { Metadata } from 'next';
+
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-vercel-domain.vercel.app';
 
-interface NotePageProps {
-  params: { id: string }; // <--- просто об’єкт
-}
 
-export async function generateMetadata({ params }: NotePageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
   const note = await fetchNoteById(params.id);
 
   return {
@@ -31,7 +34,12 @@ export async function generateMetadata({ params }: NotePageProps): Promise<Metad
   };
 }
 
-export default async function NotePage({ params }: NotePageProps) {
+
+export default async function NotePage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const queryClient = new QueryClient();
 
   await queryClient.prefetchQuery({
@@ -45,3 +53,4 @@ export default async function NotePage({ params }: NotePageProps) {
     </HydrationBoundary>
   );
 }
+
