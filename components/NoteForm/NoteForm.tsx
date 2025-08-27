@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNoteStore } from '@/lib/store/noteStore';
 import { createNote } from '@/lib/api';
-import css from './NoteForm.module.css';
 import type { NoteTag } from '@/types/note';
+import css from './NoteForm.module.css';
 
 interface NoteFormProps {
   onClose?: () => void;
@@ -13,25 +12,14 @@ interface NoteFormProps {
 
 export default function NoteForm({ onClose }: NoteFormProps) {
   const { draft, setDraft, clearDraft } = useNoteStore();
-  const [title, setTitle] = useState(draft.title);
-  const [content, setContent] = useState(draft.content);
-  const [tag, setTag] = useState<NoteTag>(draft.tag);
   const queryClient = useQueryClient();
-
-  // Автооновлення draft
-  useEffect(() => {
-    setDraft({ title, content, tag });
-  }, [title, content, tag, setDraft]);
 
   const mutation = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-      clearDraft();
-      setTitle('');
-      setContent('');
-      setTag('Todo');
-      if (onClose) onClose();
+      clearDraft(); // очищаємо draft після успішного створення
+      onClose?.();   // повертаємося назад
     },
     onError: (error: Error) => {
       console.error('Failed to create note:', error.message);
@@ -40,37 +28,47 @@ export default function NoteForm({ onClose }: NoteFormProps) {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    mutation.mutate({ title, content, tag });
+    mutation.mutate({
+      title: draft.title,
+      content: draft.content,
+      tag: draft.tag,
+    });
   };
 
   return (
     <form className={css.form} onSubmit={handleSubmit}>
-      <label className={css.label}>
+      <label htmlFor="title" className={css.label}>
         Title
         <input
+          id="title"
+          name="title"
           className={css.input}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={draft.title}
+          onChange={(e) => setDraft({ title: e.target.value })}
           required
         />
       </label>
 
-      <label className={css.label}>
+      <label htmlFor="content" className={css.label}>
         Content
         <textarea
+          id="content"
+          name="content"
           className={css.textarea}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
+          value={draft.content}
+          onChange={(e) => setDraft({ content: e.target.value })}
           required
         />
       </label>
 
-      <label className={css.label}>
+      <label htmlFor="tag" className={css.label}>
         Tag
         <select
+          id="tag"
+          name="tag"
           className={css.select}
-          value={tag}
-          onChange={(e) => setTag(e.target.value as NoteTag)}
+          value={draft.tag}
+          onChange={(e) => setDraft({ tag: e.target.value as NoteTag })}
         >
           <option value="Todo">Todo</option>
           <option value="Work">Work</option>
@@ -81,20 +79,11 @@ export default function NoteForm({ onClose }: NoteFormProps) {
       </label>
 
       <div className={css.buttons}>
-        <button
-          type="submit"
-          className={css.submitButton}
-          disabled={mutation.isPending}
-        >
+        <button type="submit" className={css.submitButton} disabled={mutation.isPending}>
           {mutation.isPending ? 'Saving...' : 'Save'}
         </button>
-
         {onClose && (
-          <button
-            type="button"
-            className={css.cancelButton}
-            onClick={onClose}
-          >
+          <button type="button" className={css.cancelButton} onClick={onClose}>
             Cancel
           </button>
         )}

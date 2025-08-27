@@ -12,29 +12,29 @@ import Link from 'next/link';
 import css from '@/components/NotePage/NotePage.module.css';
 
 interface NotesClientProps {
-  initialPage: number;
-  initialSearch: string;
-  initialTag: 'All' | NoteTag;
+  page: number;
+  search: string;
+  tag: 'All' | NoteTag;
   initialData?: NotesResponse;
 }
 
 export default function NotesClient({
-  initialPage,
-  initialSearch,
-  initialTag,
+  page,
+  search,
+  tag,
   initialData,
 }: NotesClientProps) {
-  const [searchTerm, setSearchTerm] = useState(initialSearch);
-  const [currentPage, setCurrentPage] = useState(initialPage);
-  const [currentTag, setCurrentTag] = useState(initialTag);
+  const [searchTerm, setSearchTerm] = useState(search);
+  const [currentPage, setCurrentPage] = useState(page);
+  const [currentTag, setCurrentTag] = useState(tag);
   const [debouncedSearchTerm] = useDebounce(searchTerm, 1000);
   const perPage = 12;
 
- 
+  // якщо змінився тег — скидати сторінку
   useEffect(() => {
     setCurrentPage(1);
-    setCurrentTag(initialTag);
-  }, [initialTag]);
+    setCurrentTag(tag);
+  }, [tag]);
 
   const query = useQuery<NotesResponse, Error>({
     queryKey: ['notes', debouncedSearchTerm, currentPage, currentTag],
@@ -49,18 +49,15 @@ export default function NotesClient({
   });
 
   const data = query.data;
-
-  const handleSearchChange = (newTerm: string) => {
-    setSearchTerm(newTerm);
-    setCurrentPage(1); 
-  };
-
   const notesExist = !!data?.notes?.length;
   const totalPages = data?.totalPages ?? 1;
 
- 
+  const handleSearchChange = (newTerm: string) => {
+    setSearchTerm(newTerm);
+    setCurrentPage(1);
+  };
+
   const handleSelectNote = (note: Note) => {
-   
     console.log('Open note:', note.id);
   };
 

@@ -18,14 +18,21 @@ export default function NotePreview({ noteId }: NotePreviewProps) {
     queryKey: ['note', noteId],
     queryFn: () => fetchNoteById(noteId),
     refetchOnMount: false,
+    staleTime: 60_000,
   });
 
   const close = () => router.back();
 
+  const formatDate = (date: string) => new Date(date).toLocaleString();
+
   return (
     <Modal onClose={close}>
       <div className={css.container}>
-        <button className={css.closeButton} onClick={close}>
+        <button
+          className={css.closeButton}
+          onClick={close}
+          aria-label="Close note preview"
+        >
           Close
         </button>
 
@@ -39,8 +46,8 @@ export default function NotePreview({ noteId }: NotePreviewProps) {
             {note.tag && <p className={css.tag}>Tag: {note.tag}</p>}
             <p>
               {note.updatedAt
-                ? `Updated: ${new Date(note.updatedAt).toLocaleString()}`
-                : `Created: ${new Date(note.createdAt).toLocaleString()}`}
+                ? `Updated: ${formatDate(note.updatedAt)}`
+                : `Created: ${formatDate(note.createdAt)}`}
             </p>
           </>
         )}
