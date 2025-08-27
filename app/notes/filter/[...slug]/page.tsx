@@ -13,17 +13,16 @@ function isNoteTag(value: string | undefined): value is NoteTag {
 }
 
 interface NotesFilterPageProps {
-  params: Promise<{ slug: string[] }>
-  searchParams: Promise<{ page?: string; search?: string }>
+  params: { slug: string[] }
+  searchParams: { page?: string; search?: string }
 }
 
+
 // --- Метадані для SEO ---
-export async function generateMetadata({
-  params,
-}: NotesFilterPageProps): Promise<Metadata> {
-  const { slug } = await params
-  const tag = slug[0] ?? 'All'
-  const tagText = tag === 'All' ? 'All Notes' : `Notes tagged "${tag}"`
+export async function generateMetadata({ params }: NotesFilterPageProps): Promise<Metadata> {
+  const slug = params.slug;
+  const tag = slug[0] ?? 'All';
+  const tagText = tag === 'All' ? 'All Notes' : `Notes tagged "${tag}"`;
 
   return {
     title: `Filter: ${tagText} | NoteHub`,
@@ -41,39 +40,36 @@ export async function generateMetadata({
         },
       ],
     },
-  }
+  };
 }
 
-// --- Компонент сторінки ---
 export default async function NotesFilterPage({
   params,
   searchParams,
 }: NotesFilterPageProps) {
-  const { slug } = await params
-  const { page: rawPage, search: rawSearch } = await searchParams
+  const slug = params.slug;
+  const rawPage = searchParams.page;
+  const rawSearch = searchParams.search;
 
-  const page = Number(rawPage) || 1
-  const search = rawSearch || ''
-  let tag: string | undefined = slug[0]
-  if (tag === 'All') tag = undefined
+  const page = Number(rawPage) || 1;
+  const search = rawSearch || '';
+  let tag: string | undefined = slug[0];
+  if (tag === 'All') tag = undefined;
 
-  const queryClient = new QueryClient()
-
+  const queryClient = new QueryClient();
   await queryClient.prefetchQuery<NotesResponse>({
     queryKey: ['notes', page, search, tag],
     queryFn: () => fetchNotes(page, search, 12, tag),
-  })
+  });
 
-  const dehydratedState = dehydrate(queryClient)
-
-return (
-  <HydrationBoundary state={dehydratedState}>
-    <NotesClient
-      page={page}
-      search={search}
-      tag={isNoteTag(tag) ? tag : 'All'}
-      initialData={queryClient.getQueryData(['notes', page, search, tag])}
-    />
-  </HydrationBoundary>
-);
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <NotesClient
+        page={page}
+        search={search}
+        tag={isNoteTag(tag) ? tag : 'All'}
+        initialData={queryClient.getQueryData(['notes', page, search, tag])}
+      />
+    </HydrationBoundary>
+  );
 }
