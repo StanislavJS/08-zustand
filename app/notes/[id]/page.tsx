@@ -28,8 +28,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+// app/notes/[id]/page.tsx
 interface NotePageProps {
-  params: { id: string };
+  params: { id: string }; // залишаємо як звичайний об’єкт
 }
 
 export default async function NotePage({ params }: NotePageProps) {
@@ -47,4 +48,5 @@ export default async function NotePage({ params }: NotePageProps) {
     </HydrationBoundary>
   );
 }
+
 
