@@ -3,18 +3,20 @@ import { fetchNoteById } from "@/lib/api";
 import type { Metadata } from "next";
 import NotePreview from '../../@modal/(.)notes/[id]/NotePreview.client';
 
-type Props = { params: { id: string } };
+interface NotePageProps {
+  params: { id: string }; 
+}
 
-// Генерація метаданих для сторінки нотатки
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+
+export async function generateMetadata({ params }: NotePageProps): Promise<Metadata> {
   const { id } = params;
   const note = await fetchNoteById(id);
 
   return {
-    title: note.title,
+    title: note.title + " | NoteHub",
     description: note.content.slice(0, 160),
     openGraph: {
-      title: note.title,
+      title: note.title + " | NoteHub",
       description: note.content.slice(0, 160),
       url: `${process.env.NEXT_PUBLIC_SITE_URL}/notes/${id}`,
       images: [
@@ -22,16 +24,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
           width: 1200,
           height: 630,
+          alt: 'NoteHub Note OG Image',
         },
       ],
     },
   };
 }
 
-// app/notes/[id]/page.tsx
-interface NotePageProps {
-  params: { id: string }; // залишаємо як звичайний об’єкт
-}
 
 export default async function NotePage({ params }: NotePageProps) {
   const { id } = params;
@@ -48,5 +47,3 @@ export default async function NotePage({ params }: NotePageProps) {
     </HydrationBoundary>
   );
 }
-
-

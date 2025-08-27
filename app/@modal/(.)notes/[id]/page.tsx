@@ -18,7 +18,7 @@ interface NotesFilterPageProps {
 
 // --- Метадані для SEO ---
 export async function generateMetadata({ params }: NotesFilterPageProps): Promise<Metadata> {
-  const { slug } = await params; // <-- await здесь
+  const { slug } = await params; 
   const tag = slug[0] ?? 'All';
   const tagText = tag === 'All' ? 'All Notes' : `Notes tagged "${tag}"`;
 
@@ -43,8 +43,8 @@ export async function generateMetadata({ params }: NotesFilterPageProps): Promis
 
 // --- Компонент сторінки ---
 export default async function NotesFilterPage({ params, searchParams }: NotesFilterPageProps) {
-  const { slug } = await params;       // <-- await здесь
-  const { page: rawPage, search: rawSearch } = await searchParams; // <-- await здесь
+  const { slug } = await params;
+  const { page: rawPage, search: rawSearch } = await searchParams;
 
   const page = Number(rawPage) || 1;
   const search = rawSearch || '';
