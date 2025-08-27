@@ -1,52 +1,47 @@
-import { QueryClient, HydrationBoundary, dehydrate } from "@tanstack/react-query";
-import { fetchNoteById } from "@/lib/api";
-import type { Metadata } from "next";
+import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { fetchNoteById } from '@/lib/api';
 import NotePreview from '../../@modal/(.)notes/[id]/NotePreview.client';
+import type { Metadata } from 'next';
 
-type Props = { params: { id: string } };
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-vercel-domain.vercel.app';
 
-// Генерація метаданих для сторінки нотатки
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = params;
-  const note = await fetchNoteById(id);
+interface NotePageProps {
+  params: { id: string }; // <--- просто об’єкт
+}
+
+export async function generateMetadata({ params }: NotePageProps): Promise<Metadata> {
+  const note = await fetchNoteById(params.id);
 
   return {
-    title: note.title,
+    title: note.title + ' | NoteHub',
     description: note.content.slice(0, 160),
     openGraph: {
-      title: note.title,
+      title: note.title + ' | NoteHub',
       description: note.content.slice(0, 160),
-      url: `${process.env.NEXT_PUBLIC_SITE_URL}/notes/${id}`,
+      url: `${SITE_URL}/notes/${params.id}`,
       images: [
         {
           url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
           width: 1200,
           height: 630,
+          alt: 'NoteHub Note OG Image',
         },
       ],
     },
   };
 }
 
-// app/notes/[id]/page.tsx
-interface NotePageProps {
-  params: { id: string }; // залишаємо як звичайний об’єкт
-}
-
 export default async function NotePage({ params }: NotePageProps) {
-  const { id } = params;
-
   const queryClient = new QueryClient();
+
   await queryClient.prefetchQuery({
-    queryKey: ['note', id],
-    queryFn: () => fetchNoteById(id),
+    queryKey: ['note', params.id],
+    queryFn: () => fetchNoteById(params.id),
   });
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <NotePreview noteId={id} />
+      <NotePreview noteId={params.id} />
     </HydrationBoundary>
   );
 }
-
-
