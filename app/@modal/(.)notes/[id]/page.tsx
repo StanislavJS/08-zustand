@@ -1,25 +1,72 @@
-import NotePreview from './NotePreview.client';
-import {
-  QueryClient,
-  HydrationBoundary,
-  dehydrate,
-} from '@tanstack/react-query';
-import { fetchNoteById } from '@/lib/api';
+import NotesClient from '../../../notes/filter/[...slug]/Notes.client';
+import { fetchNotes } from '@/lib/api';
+import type { NotesResponse, NoteTag } from '@/types/note';
+import type { Metadata } from 'next';
+import { dehydrate, QueryClient, HydrationBoundary } from '@tanstack/react-query';
 
-type Props = { params: Promise<{ id: string }> };
 
-export default async function NotePreviewModal({ params }: Props) {
-  const { id } = await params;
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-vercel-domain.vercel.app';
+
+function isNoteTag(value: string | undefined): value is NoteTag {
+  return ['Work', 'Personal', 'Meeting', 'Shopping', 'Todo'].includes(value ?? '');
+}
+
+interface NotesFilterPageProps {
+  params: Promise<{ slug: string[] }>;
+  searchParams: Promise<{ page?: string; search?: string }>;
+}
+
+// --- Метадані для SEO ---
+export async function generateMetadata({ params }: NotesFilterPageProps): Promise<Metadata> {
+  const { slug } = await params; // <-- await здесь
+  const tag = slug[0] ?? 'All';
+  const tagText = tag === 'All' ? 'All Notes' : `Notes tagged "${tag}"`;
+
+  return {
+    title: `Filter: ${tagText} | NoteHub`,
+    description: `Browse and search ${tagText} in NoteHub — filter, find, and manage your notes efficiently.`,
+    openGraph: {
+      title: `Filter: ${tagText} | NoteHub`,
+      description: `Browse and search ${tagText} in NoteHub — filter, find, and manage your notes efficiently.`,
+      url: `${SITE_URL}/notes/filter/${tag}`,
+      images: [
+        {
+          url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
+          width: 1200,
+          height: 630,
+          alt: 'NoteHub Filter Notes OG Image',
+        },
+      ],
+    },
+  };
+}
+
+// --- Компонент сторінки ---
+export default async function NotesFilterPage({ params, searchParams }: NotesFilterPageProps) {
+  const { slug } = await params;       // <-- await здесь
+  const { page: rawPage, search: rawSearch } = await searchParams; // <-- await здесь
+
+  const page = Number(rawPage) || 1;
+  const search = rawSearch || '';
+  let tag: string | undefined = slug[0];
+  if (tag === 'All') tag = undefined;
+
   const queryClient = new QueryClient();
-
-  await queryClient.prefetchQuery({
-    queryKey: ['note', id],
-    queryFn: () => fetchNoteById(id),
+  await queryClient.prefetchQuery<NotesResponse>({
+    queryKey: ['notes', page, search, tag],
+    queryFn: () => fetchNotes(page, search, 12, tag),
   });
 
+  const dehydratedState = dehydrate(queryClient);
+
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <NotePreview noteId={id} />
+    <HydrationBoundary state={dehydratedState}>
+      <NotesClient
+        page={page}
+        search={search}
+        tag={isNoteTag(tag) ? tag : 'All'}
+        initialData={queryClient.getQueryData(['notes', page, search, tag])}
+      />
     </HydrationBoundary>
   );
 }
