@@ -4,12 +4,12 @@ import type { Metadata } from "next";
 import NotePreview from '../../@modal/(.)notes/[id]/NotePreview.client';
 
 interface NotePageProps {
-  params: { id: string }; 
+  params: Promise<{ id: string }>; // <- обязательно Promise
 }
 
-
+// Генерация метаданных
 export async function generateMetadata({ params }: NotePageProps): Promise<Metadata> {
-  const { id } = params;
+  const { id } = await params; // <- await обязательно
   const note = await fetchNoteById(id);
 
   return {
@@ -31,9 +31,9 @@ export async function generateMetadata({ params }: NotePageProps): Promise<Metad
   };
 }
 
-
+// Основной компонент страницы
 export default async function NotePage({ params }: NotePageProps) {
-  const { id } = params;
+  const { id } = await params; // <- await обязательно
 
   const queryClient = new QueryClient();
   await queryClient.prefetchQuery({
